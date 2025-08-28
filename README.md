@@ -2,7 +2,6 @@
 
 <div align="center">
 
-## Tech Stack
 
 <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
 <img src="https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white" alt="Streamlit" />
@@ -59,8 +58,8 @@ The system uses a shell script (`scripts/application-collector.sh`) to gather ap
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd helper-data
+git clone [<repository-url>](https://github.com/salman-frs/streamlit-appview.git)
+cd streamlit-appview
 ```
 
 2. Install dependencies:
