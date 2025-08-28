@@ -58,7 +58,7 @@ The system uses a shell script (`scripts/application-collector.sh`) to gather ap
 
 1. Clone the repository:
 ```bash
-git clone [<repository-url>](https://github.com/salman-frs/streamlit-appview.git)
+git clone https://github.com/salman-frs/streamlit-appview.git
 cd streamlit-appview
 ```
 
