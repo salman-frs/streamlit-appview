@@ -10,11 +10,43 @@ import numpy as np
 from datetime import datetime, timedelta
 import sqlite3
 import os
+import logging
 try:
     import openpyxl
 except ImportError:
     st.warning("⚠️ openpyxl not installed. Excel export will not be available. Install with: pip install openpyxl")
     openpyxl = None
+
+# Configure logging
+def setup_logging():
+    """
+    Setup logging configuration
+    """
+    log_level = os.getenv('LOG_LEVEL', 'INFO').upper()
+    log_dir = os.getenv('LOG_DIR', '/app/logs')
+    
+    # Create logs directory if it doesn't exist
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
+    
+    # Configure logging
+    log_file = os.path.join(log_dir, 'application.log')
+    logging.basicConfig(
+        level=getattr(logging, log_level, logging.INFO),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler()
+        ]
+    )
+    
+    # Get logger
+    logger = logging.getLogger(__name__)
+    logger.info(f"Logging configured - Level: {log_level}, File: {log_file}")
+    return logger
+
+# Initialize logging
+logger = setup_logging()
 
 # Streamlit page configuration
 st.set_page_config(
@@ -1142,11 +1174,23 @@ def create_treemap_visualization(df: pd.DataFrame):
 
 
 # SQLite Database Functions
+def get_database_path():
+    """
+    Get database path from environment variable or use default
+    """
+    db_path = os.getenv('DATABASE_PATH', 'dashboard_data.db')
+    # Ensure directory exists
+    db_dir = os.path.dirname(db_path)
+    if db_dir and not os.path.exists(db_dir):
+        os.makedirs(db_dir, exist_ok=True)
+    return db_path
+
 def init_database():
     """
     Initialize SQLite database for persistent storage
     """
-    db_path = 'dashboard_data.db'
+    db_path = get_database_path()
+    logger.info(f"Initializing database at: {db_path}")
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
@@ -1177,13 +1221,14 @@ def init_database():
     
     conn.commit()
     conn.close()
+    logger.info("Database initialized successfully")
 
 def save_data_to_db(df: pd.DataFrame):
     """
     Save DataFrame to SQLite database
     """
     try:
-        db_path = 'dashboard_data.db'
+        db_path = get_database_path()
         conn = sqlite3.connect(db_path)
         
         # Clear existing data
@@ -1208,9 +1253,12 @@ def save_data_to_db(df: pd.DataFrame):
         
         conn.commit()
         conn.close()
+        logger.info(f"Successfully saved {len(df)} records to database")
         return True
     except Exception as e:
-        st.error(f"Error saving to database: {str(e)}")
+        error_msg = f"Error saving to database: {str(e)}"
+        logger.error(error_msg)
+        st.error(error_msg)
         return False
 
 def load_data_from_db() -> pd.DataFrame:
@@ -1218,7 +1266,7 @@ def load_data_from_db() -> pd.DataFrame:
     Load DataFrame from SQLite database
     """
     try:
-        db_path = 'dashboard_data.db'
+        db_path = get_database_path()
         if not os.path.exists(db_path):
             return pd.DataFrame()
         
@@ -1249,9 +1297,12 @@ def load_data_from_db() -> pd.DataFrame:
             
             df['ports'] = df['ports'].apply(safe_convert_ports)
         
+        logger.info(f"Successfully loaded {len(df)} records from database")
         return df
     except Exception as e:
-        st.error(f"Error loading from database: {str(e)}")
+        error_msg = f"Error loading from database: {str(e)}"
+        logger.error(error_msg)
+        st.error(error_msg)
         return pd.DataFrame()
 
 def clear_database():
@@ -1259,7 +1310,7 @@ def clear_database():
     Clear all data from the database
     """
     try:
-        db_path = 'dashboard_data.db'
+        db_path = get_database_path()
         if os.path.exists(db_path):
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
@@ -1277,7 +1328,7 @@ def save_user_table_to_db(table_name: str, columns: list, filters: dict, custom_
     Save user table configuration to database
     """
     try:
-        db_path = 'dashboard_data.db'
+        db_path = get_database_path()
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
@@ -1306,7 +1357,7 @@ def load_user_tables_from_db() -> dict:
     Load user table configurations from database
     """
     try:
-        db_path = 'dashboard_data.db'
+        db_path = get_database_path()
         if not os.path.exists(db_path):
             return {}
         
@@ -1355,7 +1406,7 @@ def delete_user_table_from_db(table_name: str):
     Delete a specific user table from database
     """
     try:
-        db_path = 'dashboard_data.db'
+        db_path = get_database_path()
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
@@ -1373,7 +1424,7 @@ def save_custom_table_to_db(table_name: str, table_data: dict):
     Save custom editable table to database
     """
     try:
-        db_path = 'dashboard_data.db'
+        db_path = get_database_path()
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
@@ -1410,7 +1461,7 @@ def load_custom_tables_from_db() -> dict:
     Load custom editable tables from database
     """
     try:
-        db_path = 'dashboard_data.db'
+        db_path = get_database_path()
         if not os.path.exists(db_path):
             return {}
         
@@ -1441,7 +1492,7 @@ def delete_custom_table_from_db(table_name: str):
     Delete a custom table from database
     """
     try:
-        db_path = 'dashboard_data.db'
+        db_path = get_database_path()
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
         
